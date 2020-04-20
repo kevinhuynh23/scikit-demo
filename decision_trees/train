@@ -11,16 +11,17 @@ import json
 import pickle
 import sys
 import traceback
-
+import boto3
 import pandas as pd
 
 from sklearn import tree
 
+s3 = boto3.client("s3")
 # These are the paths to where SageMaker mounts interesting things in your container.
 
 prefix = '/opt/ml/'
 
-input_path = 's3://' + os.environ.get('SRC_BKT_NAME') + '/input/data'
+input_path = 'input/data'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
@@ -30,6 +31,10 @@ param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 channel_name='training'
 training_path = os.path.join(input_path, channel_name)
 
+all_data = s3.list_objects_v2(
+    Bucket=os.environ.get('SRC_BKT_NAME'),
+    Prefix=training_path
+)
 # The function to execute the training.
 def train():
     print('Starting the training.')
@@ -39,7 +44,7 @@ def train():
             trainingParams = json.load(tc)
 
         # Take the set of files and read them all into a single pandas dataframe
-        input_files = [ os.path.join(training_path, file) for file in os.listdir(training_path) ]
+        input_files = [ os.path.join(training_path, file) for file in all_data ]
         if len(input_files) == 0:
             raise ValueError(('There are no files in {}.\n' +
                               'This usually indicates that the channel ({}) was incorrectly specified,\n' +
