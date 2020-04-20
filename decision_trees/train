@@ -29,13 +29,14 @@ param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 # This algorithm has a single channel of input data called 'training'. Since we run in
 # File mode, the input files are copied to the directory specified here.
-channel_name='training'
+channel_name='training/'
 training_path = os.path.join(input_path, channel_name)
 
 all_data = s3.list_objects_v2(
     Bucket=src_bkt,
     Prefix=training_path
-)
+)['Contents']
+
 # The function to execute the training.
 def train():
     print('Starting the training.')
@@ -45,13 +46,14 @@ def train():
             trainingParams = json.load(tc)
 
         # Take the set of files and read them all into a single pandas dataframe
-        input_files = [ os.path.join(training_path, file) for file in all_data ]
+        input_files = [ file['Key'] for file in all_data ]
+        print(input_files)
         if len(input_files) == 0:   
             raise ValueError(('There are no files in {}.\n' +
                               'This usually indicates that the channel ({}) was incorrectly specified,\n' +
                               'the data specification in S3 was incorrectly specified or the role specified\n' +
                               'does not have permission to access the data.').format(training_path, channel_name))
-        raw_data = [ pd.read_csv(s3.get_object(Bucket=src_bkt, Key=training_path + '/' + file)['Body'], header=None) for file in input_files ]
+        raw_data = [ pd.read_csv(s3.get_object(Bucket=src_bkt, Key=file)['Body'], header=None) for file in input_files ]
         train_data = pd.concat(raw_data)
 
         # labels are in the first column
