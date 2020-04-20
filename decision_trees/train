@@ -17,6 +17,7 @@ import pandas as pd
 from sklearn import tree
 
 s3 = boto3.client("s3")
+src_bkt = os.environ.get('SRC_BKT_NAME')
 # These are the paths to where SageMaker mounts interesting things in your container.
 
 prefix = '/opt/ml/'
@@ -32,7 +33,7 @@ channel_name='training'
 training_path = os.path.join(input_path, channel_name)
 
 all_data = s3.list_objects_v2(
-    Bucket=os.environ.get('SRC_BKT_NAME'),
+    Bucket=src_bkt,
     Prefix=training_path
 )
 # The function to execute the training.
@@ -50,7 +51,7 @@ def train():
                               'This usually indicates that the channel ({}) was incorrectly specified,\n' +
                               'the data specification in S3 was incorrectly specified or the role specified\n' +
                               'does not have permission to access the data.').format(training_path, channel_name))
-        raw_data = [ pd.read_csv('s3://' + file, header=None) for file in input_files ]
+        raw_data = [ pd.read_csv(s3.get_object(Bucket=src_bkt, key=training_path + '/' + file)['Body'], header=None) for file in input_files ]
         train_data = pd.concat(raw_data)
 
         # labels are in the first column
