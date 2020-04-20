@@ -20,7 +20,7 @@ from sklearn import tree
 
 prefix = '/opt/ml/'
 
-input_path = prefix + 'input/data'
+input_path = os.environ.get('SRC_BKT_NAME') + 'input/data'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')

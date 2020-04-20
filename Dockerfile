@@ -6,6 +6,8 @@ FROM ubuntu:16.04
 
 MAINTAINER Amazon AI <sage-learner@amazon.com>
 
+ARG SRC_BKT_NAME
+ENV SRC_BKT_NAME=${SRC_BKT_NAME}
 
 RUN apt-get -y update && apt-get install -y --no-install-recommends \
          wget \
